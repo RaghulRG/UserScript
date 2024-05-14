@@ -10,7 +10,7 @@ func1() {
 }
 
 func2() {
-   #your scripr
+   #your script
     echo > num1.txt
     for i in {1..100..2}; do
         echo $i >> num1.txt
