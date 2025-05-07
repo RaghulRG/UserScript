@@ -5,15 +5,32 @@ USER="myuser"
 DATA_DIR="$HOME/registry"
 CERT_DIR="$DATA_DIR/certs"
 AUTH_DIR="$DATA_DIR/auth"
-PASSWORD="changeme"  
+PASSWORD="changeme"
 
 echo "Creating directories..."
 mkdir -p "$CERT_DIR" "$AUTH_DIR" "$DATA_DIR/data"
 
-echo "Generating TLS certificate..."
+echo "Creating OpenSSL config with SAN..."
+cat > "$CERT_DIR/openssl.cnf" <<EOF
+[req]
+distinguished_name = req_distinguished_name
+x509_extensions = v3_req
+prompt = no
+
+[req_distinguished_name]
+CN = $DOMAIN
+
+[v3_req]
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = $DOMAIN
+EOF
+
+echo "Generating TLS certificate with SAN..."
 openssl req -newkey rsa:4096 -nodes -sha256 -keyout "$CERT_DIR/domain.key" \
   -x509 -days 365 -out "$CERT_DIR/domain.crt" \
-  -subj "/CN=$DOMAIN"
+  -config "$CERT_DIR/openssl.cnf" -extensions v3_req
 
 echo "Installing htpasswd tool..."
 sudo apt-get update && sudo apt-get install -y apache2-utils
@@ -43,3 +60,4 @@ echo ""
 echo "Registry is available at: https://$DOMAIN"
 echo "Username: $USER"
 echo "Password: $PASSWORD"
+
